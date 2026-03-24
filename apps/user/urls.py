@@ -2,7 +2,7 @@ from django.urls import include, path
 
 from rest_framework.routers import DefaultRouter
 
-from user.views import (
+from apps.user.views import (
     UserViewSet,
     LoginView,
     LogoutView,

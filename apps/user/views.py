@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
 from apps.base.account_utils import send_otp_email, set_user_otp
-from user.serializers import UserCreateSerializer, UserDetialSerializer, UserSerializer, LoginSerializer, ChangePasswordSerializer, OTPVerificationSerializer, PasswordResetRequestSerializer, CompletePasswordResetSerializer, UserUpadteSerializer
+from apps.user.serializers import UserCreateSerializer, UserDetialSerializer, UserSerializer, LoginSerializer, ChangePasswordSerializer, OTPVerificationSerializer, PasswordResetRequestSerializer, CompletePasswordResetSerializer, UserUpadteSerializer
 
 
 User = get_user_model()

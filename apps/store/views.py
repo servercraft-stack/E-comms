@@ -1,11 +1,21 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from .models import Products, Order, OrderItem, Cart, CartItem
-from .serializers import ProductsSerializer, OrderSerializer, CartSerializer, CartItemSerializer, OrderItemSerializer
+from .serializers import ProductsSerializer, OrderSerializer, CartSerializer, CartItemSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from drf_yasg.utils import swagger_auto_schema
+
+class ProductListView(APIView):
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(responses={200: ProductsSerializer(many=True)})
+    def get(self, request):
+        products = Products.objects.all()
+        serializer = ProductsSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class ProductCreateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -18,8 +28,8 @@ class ProductCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ProductDetailView(APIView):
 
+class ProductDetailView(APIView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(responses={200: ProductsSerializer})
@@ -30,42 +40,50 @@ class ProductDetailView(APIView):
 
     @swagger_auto_schema(request_body=ProductsSerializer, responses={200: ProductsSerializer})
     def put(self, request, pk):
+        if not request.user.is_staff:
+            return Response({"error": "Only admins can update products"}, status=403)
+
         product = get_object_or_404(Products, pk=pk)
         serializer = ProductsSerializer(product, data=request.data)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(responses={204: "Deleted"})
     def delete(self, request, pk):
+        if not request.user.is_staff:
+            return Response({"error": "Only admins can delete products"}, status=403)
+
         product = get_object_or_404(Products, pk=pk)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CartView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(responses={200: CartSerializer})
     def get(self, request):
-        cart = Cart.objects.get(user=request.user)
+        cart, _ = Cart.objects.get_or_create(user=request.user)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
 
 class AddToCartView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(request_body=CartItemSerializer, responses={201: CartItemSerializer})
     def post(self, request):
-        cart = Cart.objects.get(user=request.user)
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+
         data = request.data.copy()
         data["cart"] = cart.id
 
         serializer = CartItemSerializer(data=data)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -74,7 +92,6 @@ class AddToCartView(APIView):
 
 
 class UpdateCartItemView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(request_body=CartItemSerializer, responses={200: CartItemSerializer})
@@ -96,22 +113,39 @@ class UpdateCartItemView(APIView):
 
 
 class OrderCreateView(APIView):
-
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(request_body=OrderSerializer, responses={201: OrderSerializer})
+    @swagger_auto_schema(responses={201: OrderSerializer})
     def post(self, request):
-        serializer = OrderSerializer(data=request.data)
+        cart = get_object_or_404(Cart, user=request.user)
+        cart_items = cart.items.all()
 
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if not cart_items.exists():
+            return Response({"error": "Cart is empty"}, status=400)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        order = Order.objects.create(user=request.user)
+
+        total_price = 0
+
+        for item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price
+            )
+            total_price += item.product.price * item.quantity
+
+        order.total_price = total_price
+        order.save()
+
+        cart_items.delete()
+
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserOrdersView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(responses={200: OrderSerializer(many=True)})
@@ -119,5 +153,3 @@ class UserOrdersView(APIView):
         orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
-
-
