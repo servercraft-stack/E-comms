@@ -1,16 +1,34 @@
 from rest_framework import serializers
-from .models import Products, Order, OrderItem, Cart, CartItem, PaymentMethod, DeliveryService
+from .models import Products, Order, OrderItem, Cart, CartItem
 
-class ProductsSerializer(serializers.ModelSerializer):
+class ProductSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
 
     class Meta:
         model = Products
-        fields = ['id', 'name', 'desccription', 'price', 'stock', 'category', 'category_display', 'created_at']
+        fields = "__all__"
 
+class CreateProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Products
+        fields = ['name', 'description', 'price', 'image', 'category', 'stock']
+
+class CartItemSerializer(serializers.ModelSerializer):
+    total_price = serializers.ReadOnlyField()
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'products', 'quantity', 'total_price']
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'items']
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product = ProductsSerializer(read_only=True)
+    product = ProductSerializer(source='products', read_only=True)
 
     class Meta:
         model = OrderItem
@@ -18,24 +36,14 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(source='orderitem_set', many=True, read_only=True)
-   
 
     class Meta:
         model = Order
-        fields = ['id', 'user', 'total_price', 'created_at', 'payment_method', 'delivery_service', 'items']
+        fields = "__all__"
 
-class CartItemSerializer(serializers.ModelSerializer):
-    total_price = serializers.ReadOnlyField()
-
-    class Meta:
-        model = CartItem
-        fields = ['id', 'cart', 'products', 'quantity', 'total_price']
-
-class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(source='cartitem_set', many=True, read_only=True)
-
-    class Meta:
-        model = Cart
-        fields = ['id', 'user', 'items']
-
-    
+class CreateOrderSerializer(serializers.Serializer):
+    payment_method = serializers.IntegerField(required=False)
+    delivery_service = serializers.IntegerField(required=False)
+    delivery_address = serializers.CharField(required=False)
+    delivery_postal_code = serializers.CharField(required=False)
+    delivery_city = serializers.CharField(required=False)

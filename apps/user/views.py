@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
 from apps.base.account_utils import send_otp_email, set_user_otp
-from apps.user.serializers import UserCreateSerializer, UserDetialSerializer, UserSerializer, LoginSerializer, ChangePasswordSerializer, OTPVerificationSerializer, PasswordResetRequestSerializer, CompletePasswordResetSerializer, UserUpadteSerializer
+from apps.user.serializers import UserCreateSerializer, UserDetialSerializer, UserSerializer, LoginSerializer, ChangePasswordSerializer, OTPVerificationSerializer, PasswordResetRequestSerializer, CompletePasswordResetSerializer, UserUpadteSerializer,UserDetialSerializer
 
 
 User = get_user_model()
@@ -152,7 +152,7 @@ class LoginView(generics.GenericAPIView):
         user = serializer.validated_data['user']
         tokens = serializer.validated_data['tokens']
         return Response({
-            "user": UserDetailSerializer(user).data,
+            "user": UserDetialSerializer(user).data,
             "tokens": {
                 "access": tokens['access'],
                 "refresh": tokens['refresh'],
