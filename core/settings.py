@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-c++(l@t=0b^sb36qp)cai4b^&9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["https://e-comms-eydl.onrender.com", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["e-comms-eydl.onrender.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
