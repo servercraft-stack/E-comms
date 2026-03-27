@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-c++(l@t=0b^sb36qp)cai4b^&9803d=pm)#*rgjzlfkx9()8q)")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["https://e-comms-eydl.onrender.com", "localhost", "127.0.0.1"]
 
